@@ -37,7 +37,7 @@ func makeMigration(uri string) {
 		"myfile://internal/database/migrations",
 		uri)
 	err = m.Up()
-	if err != migrate.ErrNoChange {
+	if err != nil && err != migrate.ErrNoChange {
 		panic(err)
 	}
 }

@@ -28,24 +28,29 @@ func (h Handler) UserRegister(c *gin.Context) {
 	err := json.NewDecoder(c.Request.Body).Decode(&req)
 	if err != nil {
 		c.String(http.StatusBadRequest, "")
+		return
 	}
 
 	user, err := ur.GetByLogin(req.Login)
 	if user.ID != 0 {
 		c.String(http.StatusConflict, "")
+		return
 	}
 	if err != nil && err != pgx.ErrNoRows {
 		c.String(http.StatusInternalServerError, "")
+		return
 	}
 
 	success, err := ur.Add(req.Login, req.Password)
 	if !success || err != nil {
 		c.String(http.StatusInternalServerError, "")
+		return
 	}
 	token := auth.GenerateAuthToken()
 	err = ur.SetAuthToken(req.Login, token)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "")
+		return
 	}
 	auth.SetAuthCookie(c, token)
 	c.String(http.StatusOK, "")
@@ -58,21 +63,25 @@ func (h Handler) UserLogin(c *gin.Context) {
 	err := json.NewDecoder(c.Request.Body).Decode(&req)
 	if err != nil {
 		c.String(http.StatusBadRequest, "")
+		return
 	}
 
 	user, err := ur.GetByLogin(req.Login)
 	if err == pgx.ErrNoRows {
 		c.String(http.StatusUnauthorized, "")
+		return
 	}
 
 	if !auth.ComparePasswords(req.Password, user.Password) {
 		c.String(http.StatusUnauthorized, "")
+		return
 	}
 
 	token := auth.GenerateAuthToken()
 	err = ur.SetAuthToken(req.Login, token)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "")
+		return
 	}
 	auth.SetAuthCookie(c, token)
 

@@ -43,7 +43,7 @@ func (ur UserRepository) GetByLogin(login string) (User, error) {
 }
 
 func (ur UserRepository) SetAuthToken(login string, token string) error {
-	query := fmt.Sprintf("UPDATE %s set auth_token = %s WHERE login = '%s';", tableName, token, login)
+	query := fmt.Sprintf("UPDATE %s set auth_token = '%s' WHERE login = '%s';", tableName, token, login)
 	_, err := ur.Storage.DBConn.Exec(context.Background(), query)
 	if err != nil {
 		return err

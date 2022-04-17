@@ -15,7 +15,7 @@ func SetupRouter(c config.Config, s *database.Storage) *gin.Engine {
 		Storage: s,
 	}
 	r.POST("/api/user/register", h.UserRegister)
-	r.POST("/api/user/login", h.Dummy)
+	r.POST("/api/user/login", h.UserLogin)
 	r.POST("/api/user/orders", h.Dummy)
 	r.GET("/api/user/orders", h.Dummy)
 	r.GET("/api/user/balance", h.Dummy)

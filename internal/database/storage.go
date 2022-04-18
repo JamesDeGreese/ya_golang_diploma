@@ -27,7 +27,6 @@ func InitStorage(c config.Config) *Storage {
 }
 
 func makeMigration(uri string) {
-	uri += "?sslmode=disable"
 	m, err := migrate.New(
 		"file://internal/database/migrations",
 		uri)

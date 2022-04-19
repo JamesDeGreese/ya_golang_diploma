@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
+	"time"
 
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/auth"
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/config"
@@ -97,7 +98,7 @@ func (h Handler) OrderStore(c *gin.Context) {
 	orderNumber := string(body)
 
 	if match, _ := regexp.MatchString("\\d+", orderNumber); !match {
-		c.String(http.StatusBadRequest, "")
+		c.String(http.StatusUnprocessableEntity, "")
 		return
 	}
 
@@ -134,5 +135,33 @@ func (h Handler) OrderStore(c *gin.Context) {
 }
 
 func (h Handler) OrdersGet(c *gin.Context) {
-	c.String(http.StatusOK, "")
+	u, exists := c.Get("user")
+	if !exists {
+		c.String(http.StatusInternalServerError, "")
+		return
+	}
+	user := u.(entities.User)
+
+	or := entities.OrderRepository{Storage: *h.Storage}
+	orders, err := or.GetByUserID(user.ID)
+	if len(orders) == 0 {
+		c.JSON(http.StatusNoContent, "{}")
+		return
+	}
+	if err != nil && err != pgx.ErrNoRows {
+		c.String(http.StatusInternalServerError, "")
+		return
+	}
+
+	res := make([]Order, 0)
+	for _, o := range orders {
+		res = append(res, Order{
+			o.Number,
+			o.Status,
+			o.Accrual,
+			o.UploadedAt.Time.Format(time.RFC3339),
+		})
+	}
+
+	c.JSON(http.StatusOK, res)
 }

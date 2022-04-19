@@ -47,12 +47,22 @@ func (or OrderRepository) GetByNumber(number string) (Order, error) {
 	return res, nil
 }
 
-func (or OrderRepository) GetByUserID(userID int) (Order, error) {
-	var res Order
+func (or OrderRepository) GetByUserID(userID int) ([]Order, error) {
+	res := make([]Order, 0)
 	query := fmt.Sprintf("SELECT id, user_id, number, status, accrual, uploaded_at FROM %s WHERE user_id = %d;", or.getTableName(), userID)
-	err := or.Storage.DBConn.QueryRow(context.Background(), query).Scan(&res.ID, &res.UserID, &res.Number, &res.Status, &res.Accrual, &res.UploadedAt)
+	rows, err := or.Storage.DBConn.Query(context.Background(), query)
 	if err != nil {
 		return res, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var r Order
+		err := rows.Scan(&r.ID, &r.UserID, &r.Number, &r.Status, &r.Accrual, &r.UploadedAt)
+		if err != nil {
+			return nil, nil
+		}
+		res = append(res, r)
 	}
 
 	return res, nil

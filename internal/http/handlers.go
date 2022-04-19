@@ -150,10 +150,6 @@ func (h Handler) OrdersGet(c *gin.Context) {
 
 	res := make([]Order, 0)
 	for _, o := range orders {
-		if err != nil {
-			c.String(http.StatusInternalServerError, "")
-			return
-		}
 		res = append(res, Order{
 			o.Number,
 			o.Status,
@@ -226,10 +222,6 @@ func (h Handler) WithdrawalsGet(c *gin.Context) {
 
 	res := make([]Withdraw, 0)
 	for _, w := range withdrawals {
-		if err != nil {
-			c.String(http.StatusInternalServerError, "")
-			return
-		}
 		res = append(res, Withdraw{
 			w.Order,
 			float32(w.Sum / 100),

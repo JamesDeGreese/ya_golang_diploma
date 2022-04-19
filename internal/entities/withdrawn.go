@@ -26,8 +26,8 @@ func (wr WithdrawnRepository) getTableName() string {
 	return "withdrawals"
 }
 
-func (wr WithdrawnRepository) Add(userID int, orderId int, sum float32) (bool, error) {
-	query := fmt.Sprintf("INSERT INTO %s (user_id, order_id, sum, processed_at) VALUES (%d, %d, %f, '%s');", wr.getTableName(), userID, orderId, sum*100, time.Now().Format(time.RFC3339))
+func (wr WithdrawnRepository) Add(userID int, orderID int, sum float32) (bool, error) {
+	query := fmt.Sprintf("INSERT INTO %s (user_id, order_id, sum, processed_at) VALUES (%d, %d, %f, '%s');", wr.getTableName(), userID, orderID, sum*100, time.Now().Format(time.RFC3339))
 	_, err := wr.Storage.DBConn.Exec(context.Background(), query)
 	if err != nil {
 		return false, err
@@ -36,7 +36,7 @@ func (wr WithdrawnRepository) Add(userID int, orderId int, sum float32) (bool, e
 	return true, nil
 }
 
-func (wr WithdrawnRepository) GetByOrderId(orderID int) (Withdraw, error) {
+func (wr WithdrawnRepository) GetByOrderID(orderID int) (Withdraw, error) {
 	var res Withdraw
 	query := fmt.Sprintf("SELECT id, user_id, order_id, sum, processed_at FROM %s WHERE order_id = %d;", wr.getTableName(), orderID)
 	err := wr.Storage.DBConn.QueryRow(context.Background(), query).Scan(&res.ID, &res.UserID, &res.Order, &res.Sum, &res.ProcessedAt)

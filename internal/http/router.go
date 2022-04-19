@@ -1,6 +1,7 @@
 package responses
 
 import (
+	"github.com/JamesDeGreese/ya_golang_diploma/internal/auth"
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/config"
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/database"
 	"github.com/gin-contrib/gzip"
@@ -16,10 +17,14 @@ func SetupRouter(c config.Config, s *database.Storage) *gin.Engine {
 	}
 	r.POST("/api/user/register", h.UserRegister)
 	r.POST("/api/user/login", h.UserLogin)
-	r.POST("/api/user/orders", h.Dummy)
-	r.GET("/api/user/orders", h.Dummy)
-	r.GET("/api/user/balance", h.Dummy)
-	r.POST("/api/user/balance/withdraw", h.Dummy)
-	r.GET("/api/user/balance/withdrawals", h.Dummy)
+
+	authorized := r.Group("/").Use(auth.Middleware(s))
+
+	authorized.POST("/api/user/orders", h.OrderStore)
+	authorized.GET("/api/user/orders", h.OrdersGet)
+	authorized.GET("/api/user/balance", h.Dummy)
+	authorized.POST("/api/user/balance/withdraw", h.Dummy)
+	authorized.GET("/api/user/balance/withdrawals", h.Dummy)
+
 	return r
 }

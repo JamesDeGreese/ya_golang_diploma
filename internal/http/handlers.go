@@ -2,7 +2,9 @@ package responses
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
+	"regexp"
 
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/auth"
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/config"
@@ -19,7 +21,6 @@ type Handler struct {
 
 func (h Handler) Dummy(c *gin.Context) {
 	c.String(http.StatusOK, "")
-	return
 }
 
 func (h Handler) UserRegister(c *gin.Context) {
@@ -41,7 +42,7 @@ func (h Handler) UserRegister(c *gin.Context) {
 		return
 	}
 
-	success, err := ur.Add(req.Login, req.Password)
+	success, err := ur.Add(req.Login, auth.MakeMD5(req.Password))
 	if !success || err != nil {
 		c.String(http.StatusInternalServerError, "")
 		return
@@ -54,7 +55,6 @@ func (h Handler) UserRegister(c *gin.Context) {
 	}
 	auth.SetAuthCookie(c, token)
 	c.String(http.StatusOK, "")
-	return
 }
 
 func (h Handler) UserLogin(c *gin.Context) {
@@ -86,5 +86,53 @@ func (h Handler) UserLogin(c *gin.Context) {
 	auth.SetAuthCookie(c, token)
 
 	c.String(http.StatusOK, "")
-	return
+}
+
+func (h Handler) OrderStore(c *gin.Context) {
+	body, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		c.String(http.StatusInternalServerError, "")
+		return
+	}
+	orderNumber := string(body)
+
+	if match, _ := regexp.MatchString("\\d+", orderNumber); !match {
+		c.String(http.StatusBadRequest, "")
+		return
+	}
+
+	or := entities.OrderRepository{Storage: *h.Storage}
+	order, err := or.GetByNumber(orderNumber)
+	if err != nil && err != pgx.ErrNoRows {
+		c.String(http.StatusInternalServerError, "")
+		return
+	}
+
+	u, exists := c.Get("user")
+	if !exists {
+		c.String(http.StatusInternalServerError, "")
+		return
+	}
+	user := u.(entities.User)
+
+	if order.ID != 0 && order.UserID == user.ID {
+		c.String(http.StatusOK, "")
+		return
+	}
+	if order.ID != 0 && order.UserID != user.ID {
+		c.String(http.StatusConflict, "")
+		return
+	}
+
+	success, err := or.Add(user.ID, orderNumber)
+	if !success || err != nil {
+		c.String(http.StatusInternalServerError, "")
+		return
+	}
+
+	c.String(http.StatusAccepted, "")
+}
+
+func (h Handler) OrdersGet(c *gin.Context) {
+	c.String(http.StatusOK, "")
 }

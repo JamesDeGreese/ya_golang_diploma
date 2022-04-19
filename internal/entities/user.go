@@ -4,11 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/JamesDeGreese/ya_golang_diploma/internal/auth"
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/database"
 )
-
-var tableName string = "users"
 
 type User struct {
 	ID        int
@@ -21,8 +18,12 @@ type UserRepository struct {
 	Storage database.Storage
 }
 
+func (ur UserRepository) getTableName() string {
+	return "users"
+}
+
 func (ur UserRepository) Add(login string, password string) (bool, error) {
-	query := fmt.Sprintf("INSERT INTO %s (login, password) VALUES ('%s', '%s');", tableName, login, auth.MakeMD5(password))
+	query := fmt.Sprintf("INSERT INTO %s (login, password) VALUES ('%s', '%s');", ur.getTableName(), login, password)
 	_, err := ur.Storage.DBConn.Exec(context.Background(), query)
 	if err != nil {
 		return false, err
@@ -33,7 +34,7 @@ func (ur UserRepository) Add(login string, password string) (bool, error) {
 
 func (ur UserRepository) GetByLogin(login string) (User, error) {
 	var res User
-	query := fmt.Sprintf("SELECT id, login, password, auth_token FROM %s WHERE login = '%s';", tableName, login)
+	query := fmt.Sprintf("SELECT id, login, password, auth_token FROM %s WHERE login = '%s';", ur.getTableName(), login)
 	err := ur.Storage.DBConn.QueryRow(context.Background(), query).Scan(&res.ID, &res.Login, &res.Password, &res.AuthToken)
 	if err != nil {
 		return res, err
@@ -43,11 +44,22 @@ func (ur UserRepository) GetByLogin(login string) (User, error) {
 }
 
 func (ur UserRepository) SetAuthToken(login string, token string) error {
-	query := fmt.Sprintf("UPDATE %s set auth_token = '%s' WHERE login = '%s';", tableName, token, login)
+	query := fmt.Sprintf("UPDATE %s set auth_token = '%s' WHERE login = '%s';", ur.getTableName(), token, login)
 	_, err := ur.Storage.DBConn.Exec(context.Background(), query)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (ur UserRepository) GetByToken(authToken string) (interface{}, interface{}) {
+	var res User
+	query := fmt.Sprintf("SELECT id, login, password, auth_token FROM %s WHERE auth_token = '%s';", ur.getTableName(), authToken)
+	err := ur.Storage.DBConn.QueryRow(context.Background(), query).Scan(&res.ID, &res.Login, &res.Password, &res.AuthToken)
+	if err != nil {
+		return res, err
+	}
+
+	return res, nil
 }

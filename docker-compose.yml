@@ -6,7 +6,7 @@ services:
     ports:
       - "5432:5432"
     environment:
-      - POSTGRES_USER=user
+      - POSTGRES_USER=entities
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=ya_golang_diploma_db
 

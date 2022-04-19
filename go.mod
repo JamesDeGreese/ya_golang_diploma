@@ -8,6 +8,7 @@ require (
 	github.com/gin-gonic/gin v1.7.7
 	github.com/golang-migrate/migrate/v4 v4.15.1
 	github.com/jackc/pgx/v4 v4.15.0
+	google.golang.org/genproto v0.0.0-20211013025323-ce878158c4d4
 )
 
 require (

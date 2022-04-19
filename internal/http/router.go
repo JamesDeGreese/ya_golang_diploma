@@ -1,4 +1,4 @@
-package responses
+package http
 
 import (
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/auth"
@@ -22,9 +22,9 @@ func SetupRouter(c config.Config, s *database.Storage) *gin.Engine {
 
 	authorized.POST("/api/user/orders", h.OrderStore)
 	authorized.GET("/api/user/orders", h.OrdersGet)
-	authorized.GET("/api/user/balance", h.Dummy)
-	authorized.POST("/api/user/balance/withdraw", h.Dummy)
-	authorized.GET("/api/user/balance/withdrawals", h.Dummy)
+	authorized.GET("/api/user/balance", h.BalanceGet)
+	authorized.POST("/api/user/balance/withdraw", h.WithdrawRegister)
+	authorized.GET("/api/user/balance/withdrawals", h.WithdrawalsGet)
 
 	return r
 }

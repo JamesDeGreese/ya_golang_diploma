@@ -12,6 +12,7 @@ type User struct {
 	Login     string
 	Password  string
 	AuthToken string
+	Balance   int
 }
 
 type UserRepository struct {
@@ -34,8 +35,8 @@ func (ur UserRepository) Add(login string, password string) (bool, error) {
 
 func (ur UserRepository) GetByLogin(login string) (User, error) {
 	var res User
-	query := fmt.Sprintf("SELECT id, login, password, auth_token FROM %s WHERE login = '%s';", ur.getTableName(), login)
-	err := ur.Storage.DBConn.QueryRow(context.Background(), query).Scan(&res.ID, &res.Login, &res.Password, &res.AuthToken)
+	query := fmt.Sprintf("SELECT id, login, password, auth_token, balance FROM %s WHERE login = '%s';", ur.getTableName(), login)
+	err := ur.Storage.DBConn.QueryRow(context.Background(), query).Scan(&res.ID, &res.Login, &res.Password, &res.AuthToken, &res.Balance)
 	if err != nil {
 		return res, err
 	}
@@ -55,8 +56,8 @@ func (ur UserRepository) SetAuthToken(login string, token string) error {
 
 func (ur UserRepository) GetByToken(authToken string) (interface{}, interface{}) {
 	var res User
-	query := fmt.Sprintf("SELECT id, login, password, auth_token FROM %s WHERE auth_token = '%s';", ur.getTableName(), authToken)
-	err := ur.Storage.DBConn.QueryRow(context.Background(), query).Scan(&res.ID, &res.Login, &res.Password, &res.AuthToken)
+	query := fmt.Sprintf("SELECT id, login, password, auth_token, balance / 100 FROM %s WHERE auth_token = '%s';", ur.getTableName(), authToken)
+	err := ur.Storage.DBConn.QueryRow(context.Background(), query).Scan(&res.ID, &res.Login, &res.Password, &res.AuthToken, &res.Balance)
 	if err != nil {
 		return res, err
 	}

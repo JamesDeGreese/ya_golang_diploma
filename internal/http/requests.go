@@ -1,4 +1,4 @@
-package responses
+package http
 
 type RegisterRequest struct {
 	Login    string `json:"login"`
@@ -11,6 +11,6 @@ type LoginRequest struct {
 }
 
 type WithdrawRequest struct {
-	Order string `json:"order"`
-	Sum   string `json:"sum"`
+	Order string  `json:"order"`
+	Sum   float32 `json:"sum"`
 }

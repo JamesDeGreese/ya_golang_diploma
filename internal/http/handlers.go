@@ -1,4 +1,4 @@
-package responses
+package http
 
 import (
 	"encoding/json"
@@ -114,12 +114,7 @@ func (h Handler) OrderStore(c *gin.Context) {
 		return
 	}
 
-	u, exists := c.Get("user")
-	if !exists {
-		c.String(http.StatusUnauthorized, "")
-		return
-	}
-	user := u.(entities.User)
+	user := getUser(c)
 
 	if order.ID != 0 && order.UserID == user.ID {
 		c.String(http.StatusOK, "")
@@ -140,12 +135,7 @@ func (h Handler) OrderStore(c *gin.Context) {
 }
 
 func (h Handler) OrdersGet(c *gin.Context) {
-	u, exists := c.Get("user")
-	if !exists {
-		c.String(http.StatusInternalServerError, "")
-		return
-	}
-	user := u.(entities.User)
+	user := getUser(c)
 
 	or := entities.OrderRepository{Storage: *h.Storage}
 	orders, err := or.GetByUserID(user.ID)
@@ -153,7 +143,7 @@ func (h Handler) OrdersGet(c *gin.Context) {
 		c.JSON(http.StatusNoContent, orders)
 		return
 	}
-	if err != nil && err != pgx.ErrNoRows {
+	if err != nil {
 		c.String(http.StatusInternalServerError, "")
 		return
 	}
@@ -173,4 +163,88 @@ func (h Handler) OrdersGet(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, res)
+}
+
+func (h Handler) BalanceGet(c *gin.Context) {
+	user := getUser(c)
+
+	wr := entities.WithdrawnRepository{Storage: *h.Storage}
+	withdrawn, err := wr.GetUserWithdrawnSum(user.ID)
+	if err != nil {
+		c.String(http.StatusInternalServerError, "")
+		return
+	}
+	res := Balance{
+		float32(user.Balance / 100),
+		float32(withdrawn / 100),
+	}
+
+	c.JSON(http.StatusOK, res)
+}
+
+func (h Handler) WithdrawRegister(c *gin.Context) {
+	var req WithdrawRequest
+	wr := entities.WithdrawnRepository{Storage: *h.Storage}
+	or := entities.OrderRepository{Storage: *h.Storage}
+	err := json.NewDecoder(c.Request.Body).Decode(&req)
+	if err != nil {
+		c.String(http.StatusBadRequest, "")
+		return
+	}
+
+	user := getUser(c)
+	if user.Balance < int(req.Sum*100) {
+		c.String(http.StatusPaymentRequired, "")
+	}
+	order, err := or.GetByNumber(req.Order)
+	if order.ID == 0 || err != nil {
+		c.String(http.StatusUnprocessableEntity, "")
+		return
+	}
+
+	success, err := wr.Add(user.ID, order.ID, req.Sum)
+	if !success || err != nil {
+		c.String(http.StatusInternalServerError, "")
+		return
+	}
+
+	c.String(http.StatusOK, "")
+}
+
+func (h Handler) WithdrawalsGet(c *gin.Context) {
+	wr := entities.WithdrawnRepository{Storage: *h.Storage}
+	user := getUser(c)
+	withdrawals, err := wr.GetByUserID(user.ID)
+	if len(withdrawals) == 0 {
+		c.JSON(http.StatusNoContent, withdrawals)
+		return
+	}
+	if err != nil {
+		c.String(http.StatusInternalServerError, "")
+		return
+	}
+
+	res := make([]Withdraw, 0)
+	for _, w := range withdrawals {
+		if err != nil {
+			c.String(http.StatusInternalServerError, "")
+			return
+		}
+		res = append(res, Withdraw{
+			w.Order,
+			float32(w.Sum / 100),
+			w.ProcessedAt.Time.Format(time.RFC3339),
+		})
+	}
+
+	c.JSON(http.StatusOK, res)
+}
+
+func getUser(c *gin.Context) entities.User {
+	u, exists := c.Get("user")
+	if !exists {
+		c.String(http.StatusUnauthorized, "")
+		c.Abort()
+	}
+	return u.(entities.User)
 }

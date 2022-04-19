@@ -1,4 +1,4 @@
-package responses
+package http
 
 type Response struct {
 	Result string `json:"result"`
@@ -9,4 +9,15 @@ type Order struct {
 	Status     string `json:"status"`
 	Accrual    int    `json:"accrual"`
 	UploadedAt string `json:"uploaded_at"`
+}
+
+type Balance struct {
+	Current   float32 `json:"current"`
+	Withdrawn float32 `json:"withdrawn"`
+}
+
+type Withdraw struct {
+	Order       string  `json:"order"`
+	Sum         float32 `json:"sum"`
+	ProcessedAt string  `json:"processed_at"`
 }

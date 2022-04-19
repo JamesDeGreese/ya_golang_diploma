@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/auth"
@@ -13,6 +13,7 @@ import (
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/entities"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v4"
+	"github.com/theplant/luhn"
 )
 
 type Handler struct {
@@ -95,9 +96,13 @@ func (h Handler) OrderStore(c *gin.Context) {
 		c.String(http.StatusInternalServerError, "")
 		return
 	}
-	orderNumber := string(body)
+	orderNumber, err := strconv.Atoi(string(body))
+	if err != nil {
+		c.String(http.StatusInternalServerError, "")
+		return
+	}
 
-	if match, _ := regexp.MatchString("\\d+", orderNumber); !match {
+	if !luhn.Valid(orderNumber) {
 		c.String(http.StatusUnprocessableEntity, "")
 		return
 	}

@@ -12,7 +12,7 @@ import (
 type Order struct {
 	ID         int
 	UserID     int
-	Number     string
+	Number     int
 	Status     string
 	Accrual    int
 	UploadedAt pgtype.Timestamp

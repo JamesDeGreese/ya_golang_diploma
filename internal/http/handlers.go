@@ -116,7 +116,7 @@ func (h Handler) OrderStore(c *gin.Context) {
 
 	u, exists := c.Get("user")
 	if !exists {
-		c.String(http.StatusInternalServerError, "")
+		c.String(http.StatusUnauthorized, "")
 		return
 	}
 	user := u.(entities.User)
@@ -150,7 +150,7 @@ func (h Handler) OrdersGet(c *gin.Context) {
 	or := entities.OrderRepository{Storage: *h.Storage}
 	orders, err := or.GetByUserID(user.ID)
 	if len(orders) == 0 {
-		c.JSON(http.StatusNoContent, "{}")
+		c.JSON(http.StatusNoContent, orders)
 		return
 	}
 	if err != nil && err != pgx.ErrNoRows {

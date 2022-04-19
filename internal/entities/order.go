@@ -49,7 +49,7 @@ func (or OrderRepository) GetByNumber(number string) (Order, error) {
 
 func (or OrderRepository) GetByUserID(userID int) ([]Order, error) {
 	res := make([]Order, 0)
-	query := fmt.Sprintf("SELECT id, user_id, number, status, accrual, uploaded_at FROM %s WHERE user_id = %d;", or.getTableName(), userID)
+	query := fmt.Sprintf("SELECT id, user_id, number, status, accrual, uploaded_at FROM %s WHERE user_id = %d ORDER BY uploaded_at ASC;", or.getTableName(), userID)
 	rows, err := or.Storage.DBConn.Query(context.Background(), query)
 	if err != nil {
 		return res, err

@@ -22,7 +22,7 @@ type WithdrawnRepository struct {
 	Storage database.Storage
 }
 
-func (or WithdrawnRepository) getTableName() string {
+func (wr WithdrawnRepository) getTableName() string {
 	return "withdrawals"
 }
 
@@ -49,7 +49,7 @@ func (wr WithdrawnRepository) GetByOrderId(orderID int) (Withdraw, error) {
 
 func (wr WithdrawnRepository) GetByUserID(userID int) ([]Withdraw, error) {
 	res := make([]Withdraw, 0)
-	query := fmt.Sprintf("SELECT w.id, w.user_id, o.number, w.sum, w.processed_at FROM %s w LEFT JOIN %s o on o.id = w.order_id WHERE order_id = %d ;", wr.getTableName(), OrderRepository{}.getTableName(), userID)
+	query := fmt.Sprintf("SELECT w.id, w.user_id, o.number, w.sum, w.processed_at FROM %s w LEFT JOIN %s o on o.id = w.order_id WHERE order_id = %d ORDER BY w.processed_at ASC;", wr.getTableName(), OrderRepository{}.getTableName(), userID)
 	rows, err := wr.Storage.DBConn.Query(context.Background(), query)
 	if err != nil {
 		return res, err

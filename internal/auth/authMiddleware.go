@@ -14,14 +14,14 @@ func Middleware(s *database.Storage) gin.HandlerFunc {
 		if cookie == "" || err != nil {
 			if err != nil {
 				c.String(http.StatusUnauthorized, "")
-				return
+				c.Abort()
 			}
 		} else {
 			ur := entities.UserRepository{Storage: *s}
 			user, err := ur.GetByToken(cookie)
 			if err != nil {
 				c.String(http.StatusInternalServerError, "")
-				return
+				c.Abort()
 			}
 			c.Set("user", user)
 		}

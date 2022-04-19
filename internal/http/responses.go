@@ -5,7 +5,7 @@ type Response struct {
 }
 
 type Order struct {
-	Number     int    `json:"number"`
+	Number     string `json:"number"`
 	Status     string `json:"status"`
 	Accrual    int    `json:"accrual"`
 	UploadedAt string `json:"uploaded_at"`

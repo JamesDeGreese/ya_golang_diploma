@@ -108,7 +108,7 @@ func (h Handler) OrderStore(c *gin.Context) {
 	}
 
 	or := entities.OrderRepository{Storage: *h.Storage}
-	order, err := or.GetByNumber(orderNumber)
+	order, err := or.GetByNumber(string(body))
 	if err != nil && err != pgx.ErrNoRows {
 		c.String(http.StatusInternalServerError, "")
 		return
@@ -130,7 +130,7 @@ func (h Handler) OrderStore(c *gin.Context) {
 		return
 	}
 
-	success, err := or.Add(user.ID, orderNumber)
+	success, err := or.Add(user.ID, string(body))
 	if !success || err != nil {
 		c.String(http.StatusInternalServerError, "")
 		return
@@ -160,6 +160,10 @@ func (h Handler) OrdersGet(c *gin.Context) {
 
 	res := make([]Order, 0)
 	for _, o := range orders {
+		if err != nil {
+			c.String(http.StatusInternalServerError, "")
+			return
+		}
 		res = append(res, Order{
 			o.Number,
 			o.Status,

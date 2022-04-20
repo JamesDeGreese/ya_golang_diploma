@@ -6,6 +6,7 @@ import (
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/config"
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/database"
 	router "github.com/JamesDeGreese/ya_golang_diploma/internal/http"
+	"github.com/JamesDeGreese/ya_golang_diploma/internal/integrations"
 	"github.com/caarlos0/env/v6"
 )
 
@@ -21,8 +22,9 @@ func main() {
 	flag.StringVar(&c.AccrualSystemAddress, "r", c.AccrualSystemAddress, "r 127.0.0.1:8081")
 	flag.Parse()
 
+	as := integrations.AccrualService{Address: c.AccrualSystemAddress}
 	s := database.InitStorage(c)
-	r := router.SetupRouter(c, s)
+	r := router.SetupRouter(c, s, as)
 
 	err = r.Run(c.RunAddress)
 	if err != nil {

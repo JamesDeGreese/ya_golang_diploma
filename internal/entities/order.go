@@ -26,8 +26,8 @@ func (or OrderRepository) getTableName() string {
 	return "orders"
 }
 
-func (or OrderRepository) Add(userID int, number string) (bool, error) {
-	query := fmt.Sprintf("INSERT INTO %s (user_id, number, status, accrual, uploaded_at) VALUES (%d, '%s', 'NEW', 0, '%s');", or.getTableName(), userID, number, time.Now().Format(time.RFC3339))
+func (or OrderRepository) Add(userID int, number string, status string, accrual int) (bool, error) {
+	query := fmt.Sprintf("INSERT INTO %s (user_id, number, status, accrual, uploaded_at) VALUES (%d, '%s', '%s', %d, '%s');", or.getTableName(), userID, number, status, accrual, time.Now().Format(time.RFC3339))
 	_, err := or.Storage.DBConn.Exec(context.Background(), query)
 	if err != nil {
 		return false, err

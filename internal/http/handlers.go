@@ -11,14 +11,16 @@ import (
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/config"
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/database"
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/entities"
+	"github.com/JamesDeGreese/ya_golang_diploma/internal/integrations"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v4"
 	"github.com/theplant/luhn"
 )
 
 type Handler struct {
-	Config  config.Config
-	Storage *database.Storage
+	Config         config.Config
+	Storage        *database.Storage
+	AccrualService integrations.AccrualService
 }
 
 func (h Handler) Dummy(c *gin.Context) {
@@ -90,7 +92,7 @@ func (h Handler) UserLogin(c *gin.Context) {
 	c.String(http.StatusOK, "")
 }
 
-func (h Handler) OrderStore(c *gin.Context) {
+func (h Handler) OrderRegister(c *gin.Context) {
 	body, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "")
@@ -125,8 +127,20 @@ func (h Handler) OrderStore(c *gin.Context) {
 		return
 	}
 
-	success, err := or.Add(user.ID, string(body))
+	orderInfo, err := h.AccrualService.GetOrderInfo(string(body))
+	if err != nil {
+		c.String(http.StatusInternalServerError, "")
+		return
+	}
+
+	success, err := or.Add(user.ID, string(body), orderInfo.Status, orderInfo.Accrual)
 	if !success || err != nil {
+		c.String(http.StatusInternalServerError, "")
+		return
+	}
+	ur := entities.UserRepository{Storage: *h.Storage}
+	err = ur.SetBalance(user.Login, user.Balance+(orderInfo.Accrual*100))
+	if err != nil {
 		c.String(http.StatusInternalServerError, "")
 		return
 	}

@@ -54,6 +54,16 @@ func (ur UserRepository) SetAuthToken(login string, token string) error {
 	return nil
 }
 
+func (ur UserRepository) SetBalance(login string, balance int) error {
+	query := fmt.Sprintf("UPDATE %s set balance = %d WHERE login = '%s';", ur.getTableName(), balance, login)
+	_, err := ur.Storage.DBConn.Exec(context.Background(), query)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (ur UserRepository) GetByToken(authToken string) (interface{}, interface{}) {
 	var res User
 	query := fmt.Sprintf("SELECT id, login, password, auth_token, balance / 100 FROM %s WHERE auth_token = '%s';", ur.getTableName(), authToken)

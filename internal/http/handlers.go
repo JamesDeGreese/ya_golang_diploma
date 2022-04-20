@@ -129,15 +129,19 @@ func (h Handler) OrderRegister(c *gin.Context) {
 
 	orderInfo, err := h.AccrualService.GetOrderInfo(string(body))
 	if err != nil {
-		c.String(http.StatusInternalServerError, "")
-		return
+		success, err := or.Add(user.ID, string(body), "NEW", 0)
+		if !success || err != nil {
+			c.String(http.StatusInternalServerError, "")
+			return
+		}
+	} else {
+		success, err := or.Add(user.ID, string(body), orderInfo.Status, orderInfo.Accrual)
+		if !success || err != nil {
+			c.String(http.StatusInternalServerError, "")
+			return
+		}
 	}
 
-	success, err := or.Add(user.ID, string(body), orderInfo.Status, orderInfo.Accrual)
-	if !success || err != nil {
-		c.String(http.StatusInternalServerError, "")
-		return
-	}
 	ur := entities.UserRepository{Storage: *h.Storage}
 	err = ur.SetBalance(user.Login, user.Balance+(orderInfo.Accrual*100))
 	if err != nil {

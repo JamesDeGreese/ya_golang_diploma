@@ -127,27 +127,31 @@ func (h Handler) OrderRegister(c *gin.Context) {
 		return
 	}
 
-	orderInfo, err := h.AccrualService.GetOrderInfo(string(body))
-	if err != nil {
-		success, err := or.Add(user.ID, string(body), "NEW", 0)
-		if !success || err != nil {
-			c.String(http.StatusInternalServerError, "")
-			return
-		}
-	} else {
-		success, err := or.Add(user.ID, string(body), orderInfo.Status, orderInfo.Accrual)
-		if !success || err != nil {
-			c.String(http.StatusInternalServerError, "")
-			return
-		}
-	}
-
-	ur := entities.UserRepository{Storage: *h.Storage}
-	err = ur.SetBalance(user.Login, user.Balance+(orderInfo.Accrual*100))
-	if err != nil {
+	success, err := or.Add(user.ID, string(body), "NEW", 0)
+	if !success || err != nil {
 		c.String(http.StatusInternalServerError, "")
 		return
 	}
+
+	go func() {
+		orderInfo, err := h.AccrualService.GetOrderInfo(string(body))
+		if err != nil {
+
+		} else {
+			success, err := or.Update(string(body), orderInfo.Status, orderInfo.Accrual*100)
+			if !success || err != nil {
+				c.String(http.StatusInternalServerError, "")
+				return
+			}
+		}
+
+		ur := entities.UserRepository{Storage: *h.Storage}
+		err = ur.SetBalance(user.Login, user.Balance+(orderInfo.Accrual*100))
+		if err != nil {
+			c.String(http.StatusInternalServerError, "")
+			return
+		}
+	}()
 
 	c.String(http.StatusAccepted, "")
 }

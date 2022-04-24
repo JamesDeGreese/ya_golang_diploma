@@ -57,7 +57,7 @@ func (ur UserRepository) SetAuthToken(login string, token string) error {
 
 func (ur UserRepository) RecalculateBalance(login string) error {
 	var or OrderRepository
-	var balance pgtype.Int4
+	var balance pgtype.Int8
 	query := fmt.Sprintf("SELECT SUM(o.accrual) FROM %s u JOIN %s o ON o.user_id = u.id WHERE o.status = 'REGISTERED' AND u.login = '%s';", ur.getTableName(), or.getTableName(), login)
 	err := ur.Storage.DBConn.QueryRow(context.Background(), query).Scan(&balance)
 	if err != nil {

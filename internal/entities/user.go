@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/database"
+	"github.com/jackc/pgtype"
 )
 
 type User struct {
@@ -56,13 +57,13 @@ func (ur UserRepository) SetAuthToken(login string, token string) error {
 
 func (ur UserRepository) RecalculateBalance(login string) error {
 	var or OrderRepository
-	var balance int
-	query := fmt.Sprintf("SELECT SUM(o.accrual) FROM %s u JOIN %s o WHERE o.status = 'REGISTERED' AND u.login = '%s';", ur.getTableName(), or.getTableName(), login)
+	var balance pgtype.Int4
+	query := fmt.Sprintf("SELECT SUM(o.accrual) FROM %s u JOIN %s o ON o.user_id = u.id WHERE o.status = 'REGISTERED' AND u.login = '%s';", ur.getTableName(), or.getTableName(), login)
 	err := ur.Storage.DBConn.QueryRow(context.Background(), query).Scan(&balance)
 	if err != nil {
 		return err
 	}
-	query = fmt.Sprintf("UPDATE %s set balance = %d WHERE login = '%s';", ur.getTableName(), balance, login)
+	query = fmt.Sprintf("UPDATE %s set balance = %d WHERE login = '%s';", ur.getTableName(), balance.Int, login)
 	_, err = ur.Storage.DBConn.Exec(context.Background(), query)
 	if err != nil {
 		return err

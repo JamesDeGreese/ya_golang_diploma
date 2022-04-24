@@ -11,16 +11,14 @@ import (
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/config"
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/database"
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/entities"
-	"github.com/JamesDeGreese/ya_golang_diploma/internal/integrations"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v4"
 	"github.com/theplant/luhn"
 )
 
 type Handler struct {
-	Config         config.Config
-	Storage        *database.Storage
-	AccrualService integrations.AccrualService
+	Config  config.Config
+	Storage *database.Storage
 }
 
 func (h Handler) Dummy(c *gin.Context) {
@@ -133,18 +131,6 @@ func (h Handler) OrderRegister(c *gin.Context) {
 		return
 	}
 
-	go func() {
-		err := h.AccrualService.SyncOrder(string(body))
-		if err != nil {
-			return
-		}
-		ur := entities.UserRepository{Storage: *h.Storage}
-		err = ur.RecalculateBalance(user.Login)
-		if err != nil {
-			return
-		}
-	}()
-
 	c.String(http.StatusAccepted, "")
 }
 
@@ -152,7 +138,6 @@ func (h Handler) OrdersGet(c *gin.Context) {
 	user := getUser(c)
 
 	or := entities.OrderRepository{Storage: *h.Storage}
-	ur := entities.UserRepository{Storage: *h.Storage}
 	orders, err := or.GetByUserID(user.ID)
 	if len(orders) == 0 {
 		c.JSON(http.StatusNoContent, orders)
@@ -165,16 +150,6 @@ func (h Handler) OrdersGet(c *gin.Context) {
 
 	res := make([]Order, 0)
 	for _, o := range orders {
-		go func() {
-			err := h.AccrualService.SyncOrder(o.Number)
-			if err != nil {
-				return
-			}
-			err = ur.RecalculateBalance(user.Login)
-			if err != nil {
-				return
-			}
-		}()
 		res = append(res, Order{
 			o.Number,
 			o.Status,

@@ -37,15 +37,14 @@ func (as AccrualService) getOrderInfo(orderNumber string) (Order, error) {
 }
 
 func (as AccrualService) SyncOrder(orderNumber string) error {
-	orderInfo, err := as.getOrderInfo(orderNumber)
 	or := entities.OrderRepository{Storage: *as.Storage}
+	orderInfo, err := as.getOrderInfo(orderNumber)
 	if err != nil {
-
-	} else {
-		success, err := or.Update(orderNumber, orderInfo.Status, orderInfo.Accrual*100)
-		if !success || err != nil {
-			return err
-		}
+		return err
+	}
+	success, err := or.Update(orderNumber, orderInfo.Status, orderInfo.Accrual*100)
+	if !success || err != nil {
+		return err
 	}
 
 	return nil

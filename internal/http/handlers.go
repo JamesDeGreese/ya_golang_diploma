@@ -134,21 +134,13 @@ func (h Handler) OrderRegister(c *gin.Context) {
 	}
 
 	go func() {
-		orderInfo, err := h.AccrualService.GetOrderInfo(string(body))
+		err := h.AccrualService.SyncOrder(string(body))
 		if err != nil {
-
-		} else {
-			success, err := or.Update(string(body), orderInfo.Status, orderInfo.Accrual*100)
-			if !success || err != nil {
-				c.String(http.StatusInternalServerError, "")
-				return
-			}
+			return
 		}
-
 		ur := entities.UserRepository{Storage: *h.Storage}
-		err = ur.SetBalance(user.Login, user.Balance+(orderInfo.Accrual*100))
+		err = ur.RecalculateBalance(user.Login)
 		if err != nil {
-			c.String(http.StatusInternalServerError, "")
 			return
 		}
 	}()
@@ -160,6 +152,7 @@ func (h Handler) OrdersGet(c *gin.Context) {
 	user := getUser(c)
 
 	or := entities.OrderRepository{Storage: *h.Storage}
+	ur := entities.UserRepository{Storage: *h.Storage}
 	orders, err := or.GetByUserID(user.ID)
 	if len(orders) == 0 {
 		c.JSON(http.StatusNoContent, orders)
@@ -172,6 +165,16 @@ func (h Handler) OrdersGet(c *gin.Context) {
 
 	res := make([]Order, 0)
 	for _, o := range orders {
+		go func() {
+			err := h.AccrualService.SyncOrder(o.Number)
+			if err != nil {
+				return
+			}
+			err = ur.RecalculateBalance(user.Login)
+			if err != nil {
+				return
+			}
+		}()
 		res = append(res, Order{
 			o.Number,
 			o.Status,

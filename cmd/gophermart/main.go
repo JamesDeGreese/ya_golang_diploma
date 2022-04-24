@@ -22,8 +22,8 @@ func main() {
 	flag.StringVar(&c.AccrualSystemAddress, "r", c.AccrualSystemAddress, "r 127.0.0.1:8081")
 	flag.Parse()
 
-	as := integrations.AccrualService{Address: c.AccrualSystemAddress}
 	s := database.InitStorage(c)
+	as := integrations.AccrualService{Address: c.AccrualSystemAddress, Storage: s}
 	r := router.SetupRouter(c, s, as)
 
 	err = r.Run(c.RunAddress)

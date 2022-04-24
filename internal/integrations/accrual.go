@@ -24,8 +24,11 @@ type AccrualService struct {
 func (as AccrualService) getOrderInfo(orderNumber string) (Order, error) {
 	var o Order
 	r, err := http.Get(fmt.Sprintf("http://%s/api/orders/%s", as.Address, orderNumber))
-	if err != nil || r.StatusCode != http.StatusOK {
+	if err != nil {
 		return o, errors.New("accrual response error")
+	}
+	if r.StatusCode != http.StatusOK {
+		return o, nil
 	}
 	defer r.Body.Close()
 	err = json.NewDecoder(r.Body).Decode(&o)

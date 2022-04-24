@@ -57,7 +57,7 @@ func (ur UserRepository) SetAuthToken(login string, token string) error {
 func (ur UserRepository) RecalculateBalance(login string) error {
 	var or OrderRepository
 	var balance int
-	query := fmt.Sprintf("SELECT SUM(o.accrual) FROM %s u set JOIN %s o WHERE o.status = 'REGISTERED' AND u.login = '%s';", ur.getTableName(), or.getTableName(), login)
+	query := fmt.Sprintf("SELECT SUM(o.accrual) FROM %s u JOIN %s o WHERE o.status = 'REGISTERED' AND u.login = '%s';", ur.getTableName(), or.getTableName(), login)
 	err := ur.Storage.DBConn.QueryRow(context.Background(), query).Scan(&balance)
 	if err != nil {
 		return err

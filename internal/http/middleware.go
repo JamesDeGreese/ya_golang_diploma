@@ -47,16 +47,12 @@ func OrdersSyncMiddleware(s *database.Storage, as integrations.AccrualService) g
 			c.Abort()
 		}
 		for _, order := range orders {
-			go func() {
-				err := as.SyncOrder(order.Number)
-				if err != nil {
-					return
-				}
-				err = ur.RecalculateBalance(user.Login)
-				if err != nil {
-					return
-				}
-			}()
+			_ = as.SyncOrder(order.Number)
+			err := ur.RecalculateBalance(user.Login)
+			if err != nil {
+				c.String(http.StatusInternalServerError, "")
+				c.Abort()
+			}
 		}
 		c.Next()
 	}

@@ -19,7 +19,7 @@ func main() {
 
 	flag.StringVar(&c.RunAddress, "a", c.RunAddress, "a 127.0.0.1:8080")
 	flag.StringVar(&c.DatabaseURI, "d", c.DatabaseURI, "d postgres://username:password@host:port/database_name")
-	flag.StringVar(&c.AccrualSystemAddress, "r", c.AccrualSystemAddress, "r 127.0.0.1:8081")
+	flag.StringVar(&c.AccrualSystemAddress, "r", c.AccrualSystemAddress, "r http://127.0.0.1:8081")
 	flag.Parse()
 
 	s := database.InitStorage(c)

@@ -77,3 +77,24 @@ func (or OrderRepository) Update(number string, status string, accrual int) (boo
 
 	return true, nil
 }
+
+func (or OrderRepository) GetUserNonFinalOrders(userID int) ([]Order, error) {
+	res := make([]Order, 0)
+	query := fmt.Sprintf("SELECT id, user_id, number, status, accrual, uploaded_at FROM %s WHERE user_id = %d AND status NOT IN ('PROCESSED', 'INVALID');", or.getTableName(), userID)
+	rows, err := or.Storage.DBConn.Query(context.Background(), query)
+	if err != nil {
+		return res, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var r Order
+		err := rows.Scan(&r.ID, &r.UserID, &r.Number, &r.Status, &r.Accrual, &r.UploadedAt)
+		if err != nil {
+			return nil, nil
+		}
+		res = append(res, r)
+	}
+
+	return res, nil
+}

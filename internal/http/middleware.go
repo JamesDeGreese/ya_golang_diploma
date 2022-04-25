@@ -32,28 +32,24 @@ func AuthMiddleware(s *database.Storage) gin.HandlerFunc {
 
 func OrdersSyncMiddleware(s *database.Storage, as integrations.AccrualService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-
 		u, exists := c.Get("user")
 		if !exists {
 			c.String(http.StatusUnauthorized, "")
 			c.Abort()
 		}
 		user := u.(entities.User)
-		ur := entities.UserRepository{Storage: *s}
 		or := entities.OrderRepository{Storage: *s}
-		orders, err := or.GetByUserID(user.ID)
+		orders, err := or.GetUserNonFinalOrders(user.ID)
 		if err != nil {
 			c.String(http.StatusInternalServerError, "")
 			c.Abort()
 		}
-		for _, order := range orders {
-			_ = as.SyncOrder(order.Number)
-			err := ur.RecalculateBalance(user.Login)
-			if err != nil {
-				c.String(http.StatusInternalServerError, "")
-				c.Abort()
+		go func() {
+			for _, order := range orders {
+				_ = as.SyncOrder(order.Number)
 			}
-		}
+		}()
+
 		c.Next()
 	}
 }

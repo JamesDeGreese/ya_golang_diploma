@@ -13,7 +13,6 @@ type User struct {
 	Login     string
 	Password  string
 	AuthToken string
-	Balance   int
 }
 
 type UserRepository struct {
@@ -36,8 +35,8 @@ func (ur UserRepository) Add(login string, password string) (bool, error) {
 
 func (ur UserRepository) GetByLogin(login string) (User, error) {
 	var res User
-	query := fmt.Sprintf("SELECT id, login, password, auth_token, balance FROM %s WHERE login = '%s';", ur.getTableName(), login)
-	err := ur.Storage.DBConn.QueryRow(context.Background(), query).Scan(&res.ID, &res.Login, &res.Password, &res.AuthToken, &res.Balance)
+	query := fmt.Sprintf("SELECT id, login, password, auth_token FROM %s WHERE login = '%s';", ur.getTableName(), login)
+	err := ur.Storage.DBConn.QueryRow(context.Background(), query).Scan(&res.ID, &res.Login, &res.Password, &res.AuthToken)
 	if err != nil {
 		return res, err
 	}
@@ -55,27 +54,23 @@ func (ur UserRepository) SetAuthToken(login string, token string) error {
 	return nil
 }
 
-func (ur UserRepository) RecalculateBalance(login string) error {
+func (ur UserRepository) GetBalance(userID int) (int, error) {
 	var or OrderRepository
+	var wr WithdrawnRepository
 	var balance pgtype.Int8
-	query := fmt.Sprintf("SELECT SUM(o.accrual) FROM %s u JOIN %s o ON o.user_id = u.id WHERE o.status = 'REGISTERED' AND u.login = '%s';", ur.getTableName(), or.getTableName(), login)
+	query := fmt.Sprintf("SELECT (SELECT SUM(o.accrual) FROM %s o WHERE o.user_id = %d AND o.status = 'REGISTERED') - (SELECT SUM(w.sum) FROM %s w WHERE w.user_id = %d);", or.getTableName(), userID, wr.getTableName(), userID)
 	err := ur.Storage.DBConn.QueryRow(context.Background(), query).Scan(&balance)
 	if err != nil {
-		return err
-	}
-	query = fmt.Sprintf("UPDATE %s set balance = %d WHERE login = '%s';", ur.getTableName(), balance.Int, login)
-	_, err = ur.Storage.DBConn.Exec(context.Background(), query)
-	if err != nil {
-		return err
+		return 0, err
 	}
 
-	return nil
+	return int(balance.Int), nil
 }
 
 func (ur UserRepository) GetByToken(authToken string) (interface{}, interface{}) {
 	var res User
-	query := fmt.Sprintf("SELECT id, login, password, auth_token, balance / 100 FROM %s WHERE auth_token = '%s';", ur.getTableName(), authToken)
-	err := ur.Storage.DBConn.QueryRow(context.Background(), query).Scan(&res.ID, &res.Login, &res.Password, &res.AuthToken, &res.Balance)
+	query := fmt.Sprintf("SELECT id, login, password, auth_token FROM %s WHERE auth_token = '%s';", ur.getTableName(), authToken)
+	err := ur.Storage.DBConn.QueryRow(context.Background(), query).Scan(&res.ID, &res.Login, &res.Password, &res.AuthToken)
 	if err != nil {
 		return res, err
 	}

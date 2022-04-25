@@ -11,9 +11,9 @@ import (
 )
 
 type Order struct {
-	Number  string `json:"number"`
-	Status  string `json:"status"`
-	Accrual int    `json:"accrual"`
+	Number  string  `json:"number"`
+	Status  string  `json:"status"`
+	Accrual float64 `json:"accrual"`
 }
 
 type AccrualService struct {
@@ -23,7 +23,7 @@ type AccrualService struct {
 
 func (as AccrualService) getOrderInfo(orderNumber string) (Order, error) {
 	var o Order
-	r, err := http.Get(fmt.Sprintf("http://%s/api/orders/%s", as.Address, orderNumber))
+	r, err := http.Get(fmt.Sprintf("%s/api/orders/%s", as.Address, orderNumber))
 	if err != nil {
 		return o, errors.New("accrual response error")
 	}
@@ -45,7 +45,7 @@ func (as AccrualService) SyncOrder(orderNumber string) error {
 	if err != nil {
 		return err
 	}
-	success, err := or.Update(orderNumber, orderInfo.Status, orderInfo.Accrual*100)
+	success, err := or.Update(orderNumber, orderInfo.Status, int(orderInfo.Accrual*100))
 	if !success || err != nil {
 		return err
 	}

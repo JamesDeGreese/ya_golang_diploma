@@ -170,8 +170,14 @@ func (h Handler) BalanceGet(c *gin.Context) {
 		c.String(http.StatusInternalServerError, "")
 		return
 	}
+	ur := entities.UserRepository{Storage: *h.Storage}
+	balance, err := ur.GetBalance(user.ID)
+	if err != nil {
+		c.String(http.StatusInternalServerError, "")
+		return
+	}
 	res := Balance{
-		float32(user.Balance / 100),
+		float32(balance / 100),
 		float32(withdrawn / 100),
 	}
 
@@ -182,6 +188,7 @@ func (h Handler) WithdrawRegister(c *gin.Context) {
 	var req WithdrawRequest
 	wr := entities.WithdrawnRepository{Storage: *h.Storage}
 	or := entities.OrderRepository{Storage: *h.Storage}
+	ur := entities.UserRepository{Storage: *h.Storage}
 	err := json.NewDecoder(c.Request.Body).Decode(&req)
 	if err != nil {
 		c.String(http.StatusBadRequest, "")
@@ -189,7 +196,12 @@ func (h Handler) WithdrawRegister(c *gin.Context) {
 	}
 
 	user := getUser(c)
-	if user.Balance < int(req.Sum*100) {
+	balance, err := ur.GetBalance(user.ID)
+	if err != nil {
+		c.String(http.StatusInternalServerError, "")
+		return
+	}
+	if balance < int(req.Sum*100) {
 		c.String(http.StatusPaymentRequired, "")
 	}
 	order, err := or.GetByNumber(req.Order)

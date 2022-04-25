@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/database"
-	"github.com/jackc/pgtype"
 )
 
 type User struct {
@@ -57,14 +56,20 @@ func (ur UserRepository) SetAuthToken(login string, token string) error {
 func (ur UserRepository) GetBalance(userID int) (int, error) {
 	var or OrderRepository
 	var wr WithdrawnRepository
-	var balance pgtype.Int8
-	query := fmt.Sprintf("SELECT (SELECT SUM(o.accrual) FROM %s o WHERE o.user_id = %d AND o.status = 'REGISTERED') - (SELECT SUM(w.sum) FROM %s w WHERE w.user_id = %d);", or.getTableName(), userID, wr.getTableName(), userID)
+	var balance int
+	var withdraw int
+	query := fmt.Sprintf("SELECT COALESCE(SUM(o.accrual), 0) FROM %s o WHERE o.user_id = %d AND o.status = 'PROCESSED';", or.getTableName(), userID)
 	err := ur.Storage.DBConn.QueryRow(context.Background(), query).Scan(&balance)
 	if err != nil {
 		return 0, err
 	}
+	query = fmt.Sprintf("SELECT COALESCE(SUM(w.sum), 0) FROM %s w WHERE w.user_id = %d;", wr.getTableName(), userID)
+	err = ur.Storage.DBConn.QueryRow(context.Background(), query).Scan(&withdraw)
+	if err != nil {
+		return 0, err
+	}
 
-	return int(balance.Int), nil
+	return balance - withdraw, nil
 }
 
 func (ur UserRepository) GetByToken(authToken string) (interface{}, interface{}) {

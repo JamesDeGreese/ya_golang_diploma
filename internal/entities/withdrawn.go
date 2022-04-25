@@ -2,7 +2,6 @@ package entities
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -26,8 +25,8 @@ func (wr WithdrawnRepository) getTableName() string {
 	return "withdrawals"
 }
 
-func (wr WithdrawnRepository) Add(userID int, orderID int, sum float32) (bool, error) {
-	query := fmt.Sprintf("INSERT INTO %s (user_id, order_id, sum, processed_at) VALUES (%d, %d, %f, '%s');", wr.getTableName(), userID, orderID, sum*100, time.Now().Format(time.RFC3339))
+func (wr WithdrawnRepository) Add(userID int, order string, sum int) (bool, error) {
+	query := fmt.Sprintf("INSERT INTO %s (user_id, order_number, sum, processed_at) VALUES (%d, %s, %d, '%s');", wr.getTableName(), userID, order, sum, time.Now().Format(time.RFC3339))
 	_, err := wr.Storage.DBConn.Exec(context.Background(), query)
 	if err != nil {
 		return false, err
@@ -38,7 +37,7 @@ func (wr WithdrawnRepository) Add(userID int, orderID int, sum float32) (bool, e
 
 func (wr WithdrawnRepository) GetByOrderID(orderID int) (Withdraw, error) {
 	var res Withdraw
-	query := fmt.Sprintf("SELECT id, user_id, order_id, sum, processed_at FROM %s WHERE order_id = %d;", wr.getTableName(), orderID)
+	query := fmt.Sprintf("SELECT id, user_id, order_number, sum, processed_at FROM %s WHERE order_id = %d;", wr.getTableName(), orderID)
 	err := wr.Storage.DBConn.QueryRow(context.Background(), query).Scan(&res.ID, &res.UserID, &res.Order, &res.Sum, &res.ProcessedAt)
 	if err != nil {
 		return res, err
@@ -49,7 +48,7 @@ func (wr WithdrawnRepository) GetByOrderID(orderID int) (Withdraw, error) {
 
 func (wr WithdrawnRepository) GetByUserID(userID int) ([]Withdraw, error) {
 	res := make([]Withdraw, 0)
-	query := fmt.Sprintf("SELECT w.id, w.user_id, o.number, w.sum, w.processed_at FROM %s w LEFT JOIN %s o on o.id = w.order_id WHERE order_id = %d ORDER BY w.processed_at ASC;", wr.getTableName(), OrderRepository{}.getTableName(), userID)
+	query := fmt.Sprintf("SELECT id, user_id, order_number, sum, processed_at FROM %s WHERE user_id = %d ORDER BY w.processed_at ASC;", wr.getTableName(), userID)
 	rows, err := wr.Storage.DBConn.Query(context.Background(), query)
 	if err != nil {
 		return res, err
@@ -68,13 +67,13 @@ func (wr WithdrawnRepository) GetByUserID(userID int) ([]Withdraw, error) {
 	return res, nil
 }
 
-func (wr WithdrawnRepository) GetUserWithdrawnSum(userID int) (int64, error) {
-	var res sql.NullInt64
-	query := fmt.Sprintf("SELECT SUM(sum) FROM %s WHERE user_id = %d;", wr.getTableName(), userID)
+func (wr WithdrawnRepository) GetUserWithdrawnSum(userID int) (int, error) {
+	var res int
+	query := fmt.Sprintf("SELECT COALESCE(SUM(sum), 0) FROM %s WHERE user_id = %d;", wr.getTableName(), userID)
 	err := wr.Storage.DBConn.QueryRow(context.Background(), query).Scan(&res)
 	if err != nil {
-		return res.Int64, err
+		return 0, err
 	}
 
-	return res.Int64, nil
+	return res, nil
 }

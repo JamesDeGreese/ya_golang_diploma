@@ -153,7 +153,7 @@ func (h Handler) OrdersGet(c *gin.Context) {
 		res = append(res, Order{
 			o.Number,
 			o.Status,
-			o.Accrual,
+			float32(o.Accrual) / 100,
 			o.UploadedAt.Time.Format(time.RFC3339),
 		})
 	}
@@ -177,8 +177,8 @@ func (h Handler) BalanceGet(c *gin.Context) {
 		return
 	}
 	res := Balance{
-		float32(balance / 100),
-		float32(withdrawn / 100),
+		float32(balance) / 100,
+		float32(withdrawn) / 100,
 	}
 
 	c.JSON(http.StatusOK, res)
@@ -187,7 +187,6 @@ func (h Handler) BalanceGet(c *gin.Context) {
 func (h Handler) WithdrawRegister(c *gin.Context) {
 	var req WithdrawRequest
 	wr := entities.WithdrawnRepository{Storage: *h.Storage}
-	or := entities.OrderRepository{Storage: *h.Storage}
 	ur := entities.UserRepository{Storage: *h.Storage}
 	err := json.NewDecoder(c.Request.Body).Decode(&req)
 	if err != nil {
@@ -204,13 +203,19 @@ func (h Handler) WithdrawRegister(c *gin.Context) {
 	if balance < int(req.Sum*100) {
 		c.String(http.StatusPaymentRequired, "")
 	}
-	order, err := or.GetByNumber(req.Order)
-	if order.ID == 0 || err != nil {
+
+	orderNumber, err := strconv.Atoi(req.Order)
+	if err != nil {
+		c.String(http.StatusInternalServerError, "")
+		return
+	}
+
+	if !luhn.Valid(orderNumber) {
 		c.String(http.StatusUnprocessableEntity, "")
 		return
 	}
 
-	success, err := wr.Add(user.ID, order.ID, req.Sum)
+	success, err := wr.Add(user.ID, req.Order, int(req.Sum*100))
 	if !success || err != nil {
 		c.String(http.StatusInternalServerError, "")
 		return

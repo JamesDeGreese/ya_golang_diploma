@@ -69,7 +69,7 @@ func (or OrderRepository) GetByUserID(userID int) ([]Order, error) {
 }
 
 func (or OrderRepository) Update(number string, status string, accrual int) (bool, error) {
-	query := fmt.Sprintf("UPDATE %s SET status = %s, accrual = %d WHERE number = '%s;", or.getTableName(), status, accrual, number)
+	query := fmt.Sprintf("UPDATE %s SET status = '%s', accrual = %d WHERE number = '%s';", or.getTableName(), status, accrual, number)
 	_, err := or.Storage.DBConn.Exec(context.Background(), query)
 	if err != nil {
 		return false, err

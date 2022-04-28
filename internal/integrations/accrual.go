@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/JamesDeGreese/ya_golang_diploma/internal/database"
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/entities"
 )
 
@@ -17,8 +16,8 @@ type Order struct {
 }
 
 type AccrualService struct {
-	Address string
-	Storage *database.Storage
+	Address         string
+	OrderRepository entities.OrderRepository
 }
 
 func (as AccrualService) getOrderInfo(orderNumber string) (Order, error) {
@@ -40,12 +39,11 @@ func (as AccrualService) getOrderInfo(orderNumber string) (Order, error) {
 }
 
 func (as AccrualService) SyncOrder(orderNumber string) error {
-	or := entities.OrderRepository{Storage: *as.Storage}
 	orderInfo, err := as.getOrderInfo(orderNumber)
 	if err != nil {
 		return err
 	}
-	success, err := or.Update(orderNumber, orderInfo.Status, int(orderInfo.Accrual*100))
+	success, err := as.OrderRepository.Update(orderNumber, orderInfo.Status, int(orderInfo.Accrual*100))
 	if !success || err != nil {
 		return err
 	}

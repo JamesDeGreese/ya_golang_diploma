@@ -3,13 +3,12 @@ package http
 import (
 	"net/http"
 
-	"github.com/JamesDeGreese/ya_golang_diploma/internal/database"
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/entities"
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/integrations"
 	"github.com/gin-gonic/gin"
 )
 
-func AuthMiddleware(s *database.Storage) gin.HandlerFunc {
+func AuthMiddleware(ur entities.UserRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cookie, err := c.Cookie("auth")
 		if cookie == "" || err != nil {
@@ -18,7 +17,6 @@ func AuthMiddleware(s *database.Storage) gin.HandlerFunc {
 				c.Abort()
 			}
 		} else {
-			ur := entities.UserRepository{Storage: *s}
 			user, err := ur.GetByToken(cookie)
 			if err != nil {
 				c.String(http.StatusInternalServerError, "")
@@ -30,15 +28,18 @@ func AuthMiddleware(s *database.Storage) gin.HandlerFunc {
 	}
 }
 
-func OrdersSyncMiddleware(s *database.Storage, as integrations.AccrualService) gin.HandlerFunc {
+func OrdersSyncMiddleware(or entities.OrderRepository, as integrations.AccrualService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		u, exists := c.Get("user")
 		if !exists {
 			c.String(http.StatusUnauthorized, "")
 			c.Abort()
 		}
-		user := u.(entities.User)
-		or := entities.OrderRepository{Storage: *s}
+		user, ok := u.(entities.User)
+		if !ok {
+			c.String(http.StatusInternalServerError, "")
+			c.Abort()
+		}
 		orders, err := or.GetUserNonFinalOrders(user.ID)
 		if err != nil {
 			c.String(http.StatusInternalServerError, "")

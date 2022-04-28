@@ -5,6 +5,7 @@ import (
 
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/config"
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/database"
+	"github.com/JamesDeGreese/ya_golang_diploma/internal/entities"
 	router "github.com/JamesDeGreese/ya_golang_diploma/internal/http"
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/integrations"
 	"github.com/caarlos0/env/v6"
@@ -23,8 +24,12 @@ func main() {
 	flag.Parse()
 
 	s := database.InitStorage(c)
-	as := integrations.AccrualService{Address: c.AccrualSystemAddress, Storage: s}
-	r := router.SetupRouter(c, s, as)
+	ur := entities.UserRepository{Storage: *s}
+	or := entities.OrderRepository{Storage: *s}
+	wr := entities.WithdrawnRepository{Storage: *s}
+	as := integrations.AccrualService{Address: c.AccrualSystemAddress, OrderRepository: or}
+	h := router.Handler{Config: c, UserRepository: ur, OrderRepository: or, WithdrawnRepository: wr}
+	r := router.SetupRouter(as, h, ur, or)
 
 	err = r.Run(c.RunAddress)
 	if err != nil {

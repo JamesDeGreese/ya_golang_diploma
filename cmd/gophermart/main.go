@@ -24,9 +24,9 @@ func main() {
 	flag.Parse()
 
 	s := database.InitStorage(c)
-	ur := entities.UserRepository{Storage: *s}
-	or := entities.OrderRepository{Storage: *s}
-	wr := entities.WithdrawnRepository{Storage: *s}
+	ur := entities.UserStorage{Storage: *s}
+	or := entities.OrderStorage{Storage: *s}
+	wr := entities.WithdrawnStorage{Storage: *s}
 	as := integrations.AccrualService{Address: c.AccrualSystemAddress, OrderRepository: or}
 	h := router.Handler{Config: c, UserRepository: ur, OrderRepository: or, WithdrawnRepository: wr}
 	r := router.SetupRouter(as, h, ur, or)

@@ -1,14 +1,24 @@
 package http
 
 import (
+	"time"
+
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/entities"
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/integrations"
 	"github.com/gin-contrib/gzip"
+	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
-func SetupRouter(as integrations.AccrualService, h Handler, ur entities.UserRepository, or entities.OrderRepository) *gin.Engine {
+func SetupRouter(as integrations.AccrualService, h Handler, ur entities.UserStorage, or entities.OrderStorage) *gin.Engine {
+	logger, _ := zap.NewProduction()
+
 	r := gin.Default()
+
+	r.Use(ginzap.Ginzap(logger, time.RFC3339, true))
+	r.Use(ginzap.RecoveryWithZap(logger, true))
+
 	r.Use(gzip.Gzip(gzip.BestSpeed, gzip.WithDecompressFn(gzip.DefaultDecompressHandle)))
 	r.POST("/api/user/register", h.UserRegister)
 	r.POST("/api/user/login", h.UserLogin)

@@ -17,7 +17,7 @@ type Order struct {
 
 type AccrualService struct {
 	Address         string
-	OrderRepository entities.OrderRepository
+	OrderRepository entities.OrderStorage
 }
 
 func (as AccrualService) getOrderInfo(orderNumber string) (Order, error) {

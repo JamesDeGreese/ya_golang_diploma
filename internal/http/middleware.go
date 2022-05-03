@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func AuthMiddleware(ur entities.UserRepository) gin.HandlerFunc {
+func AuthMiddleware(ur entities.UserStorage) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		cookie, err := c.Cookie("auth")
 		if cookie == "" || err != nil {
@@ -28,7 +28,7 @@ func AuthMiddleware(ur entities.UserRepository) gin.HandlerFunc {
 	}
 }
 
-func OrdersSyncMiddleware(or entities.OrderRepository, as integrations.AccrualService) gin.HandlerFunc {
+func OrdersSyncMiddleware(or entities.OrderStorage, as integrations.AccrualService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		u, exists := c.Get("user")
 		if !exists {

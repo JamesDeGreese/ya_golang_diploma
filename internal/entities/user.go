@@ -14,15 +14,23 @@ type User struct {
 	AuthToken string
 }
 
-type UserRepository struct {
+type UserRepository interface {
+	Add(login string, password string) (bool, error)
+	GetByLogin(login string) (User, error)
+	SetAuthToken(login string, token string) error
+	GetBalance(userID int) (int, error)
+	GetByToken(authToken string) (interface{}, interface{})
+}
+
+type UserStorage struct {
 	Storage database.Storage
 }
 
-func (ur UserRepository) getTableName() string {
+func (ur UserStorage) getTableName() string {
 	return "users"
 }
 
-func (ur UserRepository) Add(login string, password string) (bool, error) {
+func (ur UserStorage) Add(login string, password string) (bool, error) {
 	query := fmt.Sprintf("INSERT INTO %s (login, password) VALUES ('%s', '%s');", ur.getTableName(), login, password)
 	_, err := ur.Storage.DBConn.Exec(context.Background(), query)
 	if err != nil {
@@ -32,7 +40,7 @@ func (ur UserRepository) Add(login string, password string) (bool, error) {
 	return true, nil
 }
 
-func (ur UserRepository) GetByLogin(login string) (User, error) {
+func (ur UserStorage) GetByLogin(login string) (User, error) {
 	var res User
 	query := fmt.Sprintf("SELECT id, login, password, auth_token FROM %s WHERE login = '%s';", ur.getTableName(), login)
 	err := ur.Storage.DBConn.QueryRow(context.Background(), query).Scan(&res.ID, &res.Login, &res.Password, &res.AuthToken)
@@ -43,7 +51,7 @@ func (ur UserRepository) GetByLogin(login string) (User, error) {
 	return res, nil
 }
 
-func (ur UserRepository) SetAuthToken(login string, token string) error {
+func (ur UserStorage) SetAuthToken(login string, token string) error {
 	query := fmt.Sprintf("UPDATE %s set auth_token = '%s' WHERE login = '%s';", ur.getTableName(), token, login)
 	_, err := ur.Storage.DBConn.Exec(context.Background(), query)
 	if err != nil {
@@ -53,9 +61,9 @@ func (ur UserRepository) SetAuthToken(login string, token string) error {
 	return nil
 }
 
-func (ur UserRepository) GetBalance(userID int) (int, error) {
-	var or OrderRepository
-	var wr WithdrawnRepository
+func (ur UserStorage) GetBalance(userID int) (int, error) {
+	var or OrderStorage
+	var wr WithdrawnStorage
 	var balance int
 	var withdraw int
 	query := fmt.Sprintf("SELECT COALESCE(SUM(o.accrual), 0) FROM %s o WHERE o.user_id = %d AND o.status = 'PROCESSED';", or.getTableName(), userID)
@@ -72,7 +80,7 @@ func (ur UserRepository) GetBalance(userID int) (int, error) {
 	return balance - withdraw, nil
 }
 
-func (ur UserRepository) GetByToken(authToken string) (interface{}, interface{}) {
+func (ur UserStorage) GetByToken(authToken string) (interface{}, interface{}) {
 	var res User
 	query := fmt.Sprintf("SELECT id, login, password, auth_token FROM %s WHERE auth_token = '%s';", ur.getTableName(), authToken)
 	err := ur.Storage.DBConn.QueryRow(context.Background(), query).Scan(&res.ID, &res.Login, &res.Password, &res.AuthToken)

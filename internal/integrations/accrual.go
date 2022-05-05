@@ -44,7 +44,10 @@ func (as AccrualService) SyncOrder(orderNumber string) error {
 		return err
 	}
 	success, err := as.OrderRepository.Update(orderNumber, orderInfo.Status, int(orderInfo.Accrual*100))
-	if !success || err != nil {
+	if !success {
+		return fmt.Errorf("unable to update order %s", orderNumber)
+	}
+	if err != nil {
 		return err
 	}
 

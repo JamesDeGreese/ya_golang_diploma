@@ -11,6 +11,7 @@ require (
 	github.com/jackc/pgtype v1.10.0
 	github.com/jackc/pgx/v4 v4.15.0
 	github.com/theplant/luhn v0.0.0-20170224032821-81a1a381387a
+	go.uber.org/zap v1.19.1
 )
 
 require (
@@ -36,7 +37,6 @@ require (
 	github.com/ugorji/go/codec v1.2.6 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.6.0 // indirect
-	go.uber.org/zap v1.19.1 // indirect
 	golang.org/x/crypto v0.0.0-20220131195533-30dcbda58838 // indirect
 	golang.org/x/sys v0.0.0-20220204135822-1c1b9b1eba6a // indirect
 	golang.org/x/text v0.3.7 // indirect

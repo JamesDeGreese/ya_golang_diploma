@@ -1,6 +1,7 @@
 package http
 
 import (
+	"go.uber.org/zap"
 	"net/http"
 
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/entities"
@@ -28,7 +29,7 @@ func AuthMiddleware(ur entities.UserStorage) gin.HandlerFunc {
 	}
 }
 
-func OrdersSyncMiddleware(or entities.OrderStorage, as integrations.AccrualService) gin.HandlerFunc {
+func OrdersSyncMiddleware(or entities.OrderStorage, as integrations.AccrualService, l *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		u, exists := c.Get("user")
 		if !exists {
@@ -42,14 +43,20 @@ func OrdersSyncMiddleware(or entities.OrderStorage, as integrations.AccrualServi
 		}
 		orders, err := or.GetUserNonFinalOrders(user.ID)
 		if err != nil {
-			c.String(http.StatusInternalServerError, "")
-			c.Abort()
-		}
-		go func() {
-			for _, order := range orders {
-				_ = as.SyncOrder(order.Number)
+			if err != nil {
+				l.Info(err.Error())
 			}
-		}()
+		}
+		if orders != nil {
+			go func() {
+				for _, order := range orders {
+					err = as.SyncOrder(order.Number)
+					if err != nil {
+						l.Info(err.Error())
+					}
+				}
+			}()
+		}
 
 		c.Next()
 	}

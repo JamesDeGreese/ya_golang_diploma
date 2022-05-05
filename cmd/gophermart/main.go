@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"go.uber.org/zap"
 
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/config"
 	"github.com/JamesDeGreese/ya_golang_diploma/internal/database"
@@ -28,8 +29,13 @@ func main() {
 	or := entities.OrderStorage{Storage: *s}
 	wr := entities.WithdrawnStorage{Storage: *s}
 	as := integrations.AccrualService{Address: c.AccrualSystemAddress, OrderRepository: or}
+	l, err := zap.NewProduction()
+	if err != nil {
+		panic(err)
+	}
+
 	h := router.Handler{Config: c, UserRepository: ur, OrderRepository: or, WithdrawnRepository: wr}
-	r := router.SetupRouter(as, h, ur, or)
+	r := router.SetupRouter(as, h, ur, or, l)
 
 	err = r.Run(c.RunAddress)
 	if err != nil {
